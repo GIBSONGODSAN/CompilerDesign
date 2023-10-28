@@ -1,0 +1,84 @@
+%{
+#include <stdio.h>
+#include <string.h>
+%}
+
+%token IF ELSE WHILE FOR IDENTIFIER NUMBER
+
+%%
+
+program: control_structure
+       | /* empty */
+       ;
+
+control_structure: if_else
+                | for_loop
+                | while_loop
+                ;
+
+if_else: IF '(' expression ')' statement
+       | IF '(' expression ')' statement ELSE statement
+       ;
+
+for_loop: FOR '(' for_expr ';' expression ';' for_expr ')' statement
+        ;
+
+while_loop: WHILE '(' expression ')' statement
+          ;
+
+expression: IDENTIFIER
+          | NUMBER
+          | expression '+' expression
+          | expression '-' expression
+          | expression '*' expression
+          | expression '/' expression
+          ;
+
+for_expr: expression
+        | /* empty */
+        ;
+
+statement: '{' program '}'
+         | control_structure
+         | expression ';'
+         ;
+
+%%
+
+int yylex() {
+    int token = getchar();
+    if (isalpha(token)) {
+        char buffer[64];
+        int i = 0;
+        while (isalnum(token)) {
+            buffer[i++] = token;
+            token = getchar();
+        }
+        buffer[i] = '\0';
+        if (strcmp(buffer, "if") == 0) {
+            return IF;
+        } else if (strcmp(buffer, "else") == 0) {
+            return ELSE;
+        } else if (strcmp(buffer, "while") == 0) {
+            return WHILE;
+        } else if (strcmp(buffer, "for") == 0) {
+            return FOR;
+        } else {
+            yylval = strdup(buffer);
+            return IDENTIFIER;
+        }
+    } else if (token >= '0' && token <= '9') {
+        yylval = token - '0';
+        return NUMBER;
+    }
+    return token;
+}
+
+int main() {
+    yyparse();
+    return 0;
+}
+
+void yyerror(const char *msg) {
+    fprintf(stderr, "Error: %s\n", msg);
+}
